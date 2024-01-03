@@ -12,7 +12,7 @@ from .api import (
 from .database import _engine_str
 
 description = """
-Welcome to the Folium RESTful application programming interface
+Welcome to the Brown RESTful application programming interface
 """
 
 # Metadata to improve the usefulness of OpenAPI Docs /docs API Explorer

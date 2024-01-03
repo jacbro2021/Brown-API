@@ -40,6 +40,7 @@ class UserEntity(EntityBase):
         return cls(
             id = user.id,
             username = user.username,
+            email = user.email,
             hashed_password = user.hashed_password,
             full_name = user.full_name,
             disabled = user.disabled,
@@ -57,6 +58,7 @@ class UserEntity(EntityBase):
         return User(
             id=self.id,
             username=self.username,
+            email=self.email,
             hashed_password=self.hashed_password,
             full_name=self.full_name,
             disabled=self.disabled,
@@ -71,6 +73,7 @@ class UserEntity(EntityBase):
         """
 
         self.username = user.username
+        self.email = user.email
         self.hashed_password = user.hashed_password
         self.full_name = user.full_name
         self.disabled = user.disabled

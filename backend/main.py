@@ -4,10 +4,7 @@
 from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from .api import (
-    user,
-    plant
-)
+from .api.Authentication import user
 
 from .database import _engine_str
 
@@ -17,19 +14,17 @@ Welcome to the Brown RESTful application programming interface
 
 # Metadata to improve the usefulness of OpenAPI Docs /docs API Explorer
 app = FastAPI(
-    title="Folium API",
+    title="Brown API",
     version="0.0.1",
     description=description,
     openapi_tags=[
         user.openapi_tags,
-        plant.openapi_tags,
     ],
 )
 
 # Plugging in each of the router APIs
 feature_apis = [
     user,
-    plant,
 ]
 
 for feature_api in feature_apis:

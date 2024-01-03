@@ -32,10 +32,10 @@ class UserService():
 
     def get_current_user(self, token: str):
         """TODO: Add documentation here."""
-        user = self.fake_decode_token(token=self._token)
+        user = self.fake_decode_token(token=token)
         return user
     
-    async def get_current_active_user(self, token: str):
+    def get_current_active_user(self, token: str):
         """TODO: Add documentation here."""
         current_user = self.get_current_user(token)
 

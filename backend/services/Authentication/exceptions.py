@@ -27,3 +27,16 @@ class InvalidTokenException(Exception):
         super().__init__(
             "Shame on you. Invalid token."
         )
+
+class DuplicateUserException(Exception):
+    """Exception to be thrown during user creation of one of the input fields is already being used by another user."""
+    def __init__(self, msg: str = "One of those fields is being used by another user. Please try again."):
+        super().__init__(
+            f"{msg}"
+        )
+
+class InvalidUserInputPropertyException(Exception):
+    def __init__(self, msg: str = "Invalid input for username, email, or password. Please ensure that there are no spaces."):
+        super().__init__(
+            f"{msg}"
+        )

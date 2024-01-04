@@ -8,7 +8,7 @@ from fastapi import Depends
 from passlib.context import CryptContext
 from email_validator import validate_email, EmailNotValidError
 
-from .exceptions import UserNotFoundException, InvalidCredentialsException
+from .exceptions import UserNotFoundException, InvalidCredentialsException, DuplicateUserException, InvalidUserInputPropertyException
 from ...entities.Authentication.user_entity import UserEntity
 from ...models.Authentication.user import User, NewUser
 from ...models.Authentication.token import Token
@@ -132,52 +132,76 @@ class AuthenticationService():
 
         return user
     
-    def _validate_unique_user(self, username: str, hashed_password: str, email: str) -> bool:
-        """TODO: Add documentation here."""
+    def _validate_unique_user(self, username: str, hashed_password: str, email: str) -> None:
+        """
+        Validates that the input username, hashed_password, and email are not already in the database.
+        
+        Args:
+            username: The username to validate.
+            hashed_password: The password to validate.
+            email: The email to validate.
+            
+        Raises:
+            DuplicateUserException: If one of the arguments is already present in a UserEntity in the database.
+        """
+
+        # Check the username for duplicates.
         query = select(UserEntity).where(UserEntity.username == username)
         ent: UserEntity | None = self._session.scalar(query)
         if ent:
-            return False
+            raise DuplicateUserException(msg=f"Username {username} already in use.")
         
+        # Check the email for duplicates.
         query = select(UserEntity).where(UserEntity.email == email)
         ent: UserEntity | None = self._session.scalar(query)
         if ent:
-            return False
+            raise DuplicateUserException(msg=f"Email {email} already in use.")
         
+        # Check the hashed_password for duplicates.
         query = select(UserEntity).where(UserEntity.hashed_password == hashed_password)
         ent: UserEntity | None = self._session.scalar(query)
         if ent:
-            return False
-        
-        return True
+            raise DuplicateUserException(msg="Password already in use by another user.")
 
     
     def create_user(self, username: str, password: str, email: str, full_name: str):
+        """
+        Create a new user in the database.
         
+        Args:
+            username: The username for the user to be created.
+            password: The password for the user to be created (in plain text).
+            email: The email for the user to be created.
+            
+        Returns:
+            NewUser: A NewUser object representing the user that was created in the database.
+            
+        Raises:
+            InvalidUserInputPropertyException: If the input properties are improperly formatted or blank.
+            DuplicateUserException: If any one of the input properties are being used by another user in the database.
+        """
+
+        # Check that inputs are not empty
         if username == "" or password == "" or email == "" or full_name == "":
-            # TODO: Create custom exception
-            raise Exception("Blank fields")
+            raise InvalidUserInputPropertyException()
         
+        # Check that there is no white space in the username or password.
         if username.replace(" ", "") != username:
-            # TODO: Create custom exception
-            raise Exception("Whitespace in username")
+            raise InvalidUserInputPropertyException("Spaces not allowed in username.")
         elif password.replace(" ", "") != password:
-            # TODO: Create custom exception
-            raise Exception("Whitespace in password")
+            raise InvalidUserInputPropertyException("Spaces not allowed in password.")
         
+        # Validate email arg. 
         try:
             valid = validate_email(email)
             email = valid.email
         except EmailNotValidError as e:
-            # TODO: Create custom exception
-            raise Exception("Invalid email")
+            raise InvalidUserInputPropertyException("Email invalid or improperly formatted.")
         
+        # Create hashed password and validate that all of the properties are unique.
         hashed_password = self._get_password_hash(password=password)
-
-        if not self._validate_unique_user(username=username, hashed_password=hashed_password, email=email):
-            # TODO: Create a custom exception.
-            raise Exception("non unique user")
-
+        self._validate_unique_user(username=username, hashed_password=hashed_password, email=email)
+            
         new_user = User(
             email=email,
             username=username,
@@ -185,20 +209,47 @@ class AuthenticationService():
             full_name=full_name
         )
 
+        # Create the users refresh token to be stored and used to create new access tokens.
         new_user = self._create_refresh_token(user=new_user)
 
+        # Add the new user to the database.
         new_user_entity = UserEntity.from_model(new_user)
-        try: 
-            self._session.add(new_user_entity)
-        except:
-            print("error occured here.")
-        
+        self._session.add(new_user_entity)
         self._session.commit()
 
+        # Log the user in to get the access token and return a NewUser object.
         token: Token = self.login(username=username, plain_password=password)
-
         return NewUser(email=new_user.email,
                        username=new_user.username, 
                        full_name=new_user.full_name, 
                        refresh_token=new_user.refresh_token, 
                        access_token=token.access_token)
+    
+    def refresh_access_token(self, refresh_token: str) -> Token:
+        """
+        Refresh the access token for a user.
+        
+        Args:
+            refresh_token: the refresh token assigned to the user.
+            
+        Returns:
+            Token: The newly created access token.
+            
+        Raises:
+            UserNotFoundException: If a user is not found with the provided refresh token.
+        """
+
+        # Get the user with the matching refresh token from the database.
+        query = select(UserEntity).where(UserEntity.refresh_token == refresh_token)
+        user_entity: UserEntity | None = self._session.scalar(query)
+
+        if not user_entity:
+            raise UserNotFoundException()
+        
+        # Create and return the access token.
+        access_token_expires = timedelta(minutes=ACCESSS_TOKEN_EXPIRE_MINUTES)
+        access_token = self._create_access_token(
+            data={"sub": user_entity.username}, expires_delta=access_token_expires
+        )
+
+        return Token(access_token=access_token, token_type="Bearer")

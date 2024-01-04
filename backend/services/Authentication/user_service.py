@@ -21,7 +21,8 @@ ACCESSS_TOKEN_EXPIRE_MINUTES = getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
 
 class UserService():
     """
-    Service that will make any API route protected and retrieves the current user.
+    Service that will make any API route protected and can be used to retrieve the 
+    current user.
        
     To add authentication protection to a route, add a dependency for this service.
     The route will then be unusable unless the caller passes an 'Authorization' header

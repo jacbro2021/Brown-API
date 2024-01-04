@@ -4,7 +4,7 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from jose import jwt
+from jose import jwt, ExpiredSignatureError, JWTError
 from passlib.context import CryptContext
 
 from ...env import getenv
@@ -16,8 +16,8 @@ from .exceptions import UserNotFoundException, InvalidTokenException, DisabledUs
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 SECRET_KEY = getenv("JWT_SECRET")
-ALGORITHM = "HS256"
-ACCESSS_TOKEN_EXPIRE_MINUTES = 30
+ALGORITHM = getenv("ALGORITHM")
+ACCESSS_TOKEN_EXPIRE_MINUTES = getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
 
 class UserService():
     """
@@ -72,12 +72,18 @@ class UserService():
             User: The user decoded from the token.
             
         Raises:
+            DisabledUserException: If the token payload is expired.
             InvalidTokenException: If the token payload is improperly formatted.
             UserNotFoundException: If there is no user in the database with a matching username.
         """
 
         # decode the JWT into a dictionary.
-        payload = jwt.decode(token=token, key=SECRET_KEY, algorithms=ALGORITHM)
+        try:
+            payload = jwt.decode(token=token, key=SECRET_KEY, algorithms=ALGORITHM)
+        except ExpiredSignatureError as e:
+            raise DisabledUserException()
+        except JWTError as e:
+            raise InvalidTokenException()
 
         # Check that the subject exists in the dictionary.
         username: str = payload.get("sub")

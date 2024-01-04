@@ -15,15 +15,17 @@ class UserEntity(EntityBase):
     # Primary key to track each user.
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     # The email for the user.
-    email: Mapped[str] = mapped_column(String, nullable=False)
+    email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     # The username for the user.
-    username: Mapped[str] = mapped_column(String, nullable=False)
+    username: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     # The hashed password of the user.
-    hashed_password: Mapped[str] = mapped_column(String, nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     # The full name of the user.
     full_name: Mapped[str] = mapped_column(String, nullable=False)
+    # The current refresh-token for the user to use to refresh their access token.
+    refresh_token: Mapped[str] = mapped_column(String, nullable=False)
     # Boolean flag to represent if the token for the user is valid.
-    disabled: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    disabled: Mapped[bool] = mapped_column(Boolean, default=False)
 
     @classmethod
     def from_model(cls, user: User) -> Self:
@@ -43,6 +45,7 @@ class UserEntity(EntityBase):
             email = user.email,
             hashed_password = user.hashed_password,
             full_name = user.full_name,
+            refresh_token = user.refresh_token,
             disabled = user.disabled,
         )
     
@@ -61,6 +64,7 @@ class UserEntity(EntityBase):
             email=self.email,
             hashed_password=self.hashed_password,
             full_name=self.full_name,
+            refresh_token=self.refresh_token,
             disabled=self.disabled,
         )
 
@@ -76,4 +80,5 @@ class UserEntity(EntityBase):
         self.email = user.email
         self.hashed_password = user.hashed_password
         self.full_name = user.full_name
+        self.refresh_token = user.refresh_token
         self.disabled = user.disabled

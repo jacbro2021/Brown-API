@@ -2,11 +2,12 @@
 
 from fastapi import (Depends,
                      HTTPException,
-                     APIRouter
+                     APIRouter,
+                     Header
                     )
 from fastapi.security import OAuth2PasswordRequestForm
 
-from ...models.Authentication.user import User
+from ...models.Authentication.user import User, NewUser
 from ...models.Authentication.token import Token
 from ...services.Authentication.user_service import UserService
 from ...services.Authentication.authentication_service import AuthenticationService
@@ -67,4 +68,19 @@ def get_current_user(user_service: UserService = Depends()) -> User:
       raise HTTPException(status_code=422, detail=str(e))
     except UserNotFoundException as e:
       raise HTTPException(status_code=404, detail=str(e))
+    
+
+@api.post("/create", tags=["Auth"])
+def create_user(username: str,
+                password: str,
+                email: str, 
+                full_name: str, 
+                auth_service: AuthenticationService = Depends()) -> NewUser:
+  
+  return auth_service.create_user(username=username, password=password,email=email, full_name=full_name)
+  
+
+@api.get("/test", tags=["Auth"])
+def test(refresh_token: str = Header()):
+  return {"refresh_token": refresh_token}
 

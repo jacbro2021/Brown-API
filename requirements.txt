@@ -12,3 +12,4 @@ black >=23.10.1, <23.11.0
 pyjwt >=2.6.0, <2.7.0
 python-jose[cryptography]
 passlib[bcrypt]
+email-validator

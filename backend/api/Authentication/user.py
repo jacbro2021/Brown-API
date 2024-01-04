@@ -95,7 +95,7 @@ def refresh_access_token(refresh_token: str = Header(), auth_service: Authentica
     except UserNotFoundException as e:
        raise HTTPException(status_code=404, detail=str(e))
 
-@api.get("/current_user", tags=["Auth"])
+@api.get("/get", tags=["Auth"])
 def get_current_user(user_service: UserService = Depends()) -> User:
     """
     Get the current user from the database. Depends on the Authorization header with a valid Bearer token.
@@ -111,6 +111,28 @@ def get_current_user(user_service: UserService = Depends()) -> User:
     """
     try:
       return user_service.get_current_active_user()
+    except DisabledUserException as e:
+      raise HTTPException(status_code=401, detail=str(e))
+    except InvalidTokenException as e:
+      raise HTTPException(status_code=422, detail=str(e))
+    except UserNotFoundException as e:
+      raise HTTPException(status_code=404, detail=str(e))
+    
+@api.delete("/delete", tags=["Auth"])
+def delete_current_user(user_service: UserService = Depends()) -> User:
+    """
+    Deletes the currently authenticated user from the database.
+
+    Returns:
+      User: The user that was deleted from the database.
+
+    Raises:
+      401: If the user is disabled and needs to reauthenticate.
+      422: If the token passed by the user is invalid.
+      404: If the user is not found in the database.
+    """
+    try:
+      return user_service.delete_current_user()
     except DisabledUserException as e:
       raise HTTPException(status_code=401, detail=str(e))
     except InvalidTokenException as e:

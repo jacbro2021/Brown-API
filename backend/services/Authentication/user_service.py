@@ -11,7 +11,7 @@ from ...env import getenv
 from ...database import db_session
 from ...models.Authentication.user import User
 from ...entities.Authentication.user_entity import UserEntity
-from .exceptions import UserNotFoundException, InvalidTokenException, DisabledUserException
+from .exceptions import UserNotFoundException, InvalidTokenException, DisabledUserException, DuplicateUserException
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
@@ -40,7 +40,7 @@ class UserService():
         self._pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
         self._token = token
 
-    def _get_user(self, username: str) -> User:
+    def _get_user(self, username: str) -> UserEntity:
         """
         Helper method that retrieves the user with the matching username from the database.
         
@@ -60,7 +60,7 @@ class UserService():
         if ent ==  None:
             raise UserNotFoundException()
         
-        return ent.to_model()
+        return ent
 
     def _get_current_user(self, token: str) -> User:
         """
@@ -93,7 +93,7 @@ class UserService():
         
         # Retrieve and return the User object.
         user = self._get_user(username=username)
-        return user
+        return user.to_model()
     
     def get_current_active_user(self) -> User:
         """
@@ -113,3 +113,25 @@ class UserService():
             raise DisabledUserException()
             
         return current_user
+    
+    def delete_current_user(self) -> User:
+        """
+        Deletes the currently authenticated user from the database.
+        
+        Returns: 
+            User: The user that was deleted from the database.
+            
+        Raises:
+            InvalidTokenException: If the token payload is improperly formatted.
+            UserNotFoundException: If there is no user in the database with a matching username.
+            DisabledUserException: If the current user is disabled in the database.
+        """
+
+        current_user = self.get_current_active_user()
+        current_user_entity = self._get_user(username=current_user.username)
+
+        self._session.delete(current_user_entity)
+        self._session.commit()
+
+        return current_user_entity.to_model()
+

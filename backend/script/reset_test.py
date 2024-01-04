@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from ..models.Authentication.user import User
 import sqlalchemy
 from ..env import getenv
-from ..services.Authentication.user_service import UserService
+from ..services.Authentication.authentication_service import AuthenticationService
 
 EntityBase.metadata.drop_all(engine)
 EntityBase.metadata.create_all(engine)
@@ -27,7 +27,7 @@ engine = sqlalchemy.create_engine(_engine_str(), echo=True)
 
 session: Session = Session(engine)
 
-service = UserService(session=session)
+service = AuthenticationService(session=session)
 
 mod: User = User(
     id=0,

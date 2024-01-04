@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from ..models.Authentication.user import User
 import sqlalchemy
 from ..env import getenv
+from ..services.Authentication.user_service import UserService
 
 EntityBase.metadata.drop_all(engine)
 EntityBase.metadata.create_all(engine)
@@ -26,18 +27,31 @@ engine = sqlalchemy.create_engine(_engine_str(), echo=True)
 
 session: Session = Session(engine)
 
+service = UserService(session=session)
+
 mod: User = User(
     id=0,
     email="johndoe@example.com",
     username="johndoe",
-    hashed_password="fakehashsecret",
+    hashed_password=f"{service.get_password_hash(password='secret')}",
     full_name="John Doe",
     disabled=False
 )
 
+mod2: User = User(
+    id=1,
+    email="johngreen@example.com",
+    username="johngreen",
+    hashed_password="fakehashsecret2",
+    full_name="John Green",
+    disabled=True
+)
+
 ent = UserEntity.from_model(mod)
+ent2 = UserEntity.from_model(mod2)
 
 session.add(ent)
+session.add(ent2)
 session.commit()
 
 session.close()

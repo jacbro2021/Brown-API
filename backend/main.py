@@ -1,6 +1,5 @@
 """Entrypoint of backend API exposing the FastAPI `app` to be served by an application server such as uvicorn."""
 
-
 from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse

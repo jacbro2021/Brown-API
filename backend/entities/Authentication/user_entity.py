@@ -4,7 +4,7 @@ from ..entity_base import EntityBase
 from sqlalchemy import Integer, String, Boolean
 from sqlalchemy.orm import mapped_column, Mapped
 
-from typing import Self
+from typing import Self, Dict
 from ...models.Authentication.user import User
 
 class UserEntity(EntityBase):
@@ -63,7 +63,7 @@ class UserEntity(EntityBase):
             full_name=self.full_name,
             disabled=self.disabled,
         )
-    
+
     def update(self, user: User) -> None:
         """
         Update a user entity using a provided model.

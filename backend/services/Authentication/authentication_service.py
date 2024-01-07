@@ -194,7 +194,7 @@ class AuthenticationService():
         # Validate email arg. 
         try:
             valid = validate_email(email)
-            email = valid.email
+            email = valid.normalized 
         except EmailNotValidError as e:
             raise InvalidUserInputPropertyException("Email invalid or improperly formatted.")
         

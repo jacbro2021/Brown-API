@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from .api.Authentication import user
+from .api.Folium import plant
 
 from .database import _engine_str
 
@@ -18,12 +19,14 @@ app = FastAPI(
     description=description,
     openapi_tags=[
         user.openapi_tags,
+        plant.openapi_tags,
     ],
 )
 
 # Plugging in each of the router APIs
 feature_apis = [
     user,
+    plant
 ]
 
 for feature_api in feature_apis:
